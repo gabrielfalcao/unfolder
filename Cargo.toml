@@ -1,6 +1,6 @@
 [package]
 name = "unfolder"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "library and executable to unfold a file into a folder and fold a previously unfolded folder into a file"
 documentation = "https://docs.rs/unfolder"
