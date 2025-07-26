@@ -1,0 +1,33 @@
+[package]
+name = "unfolder"
+version = "0.0.1"
+edition = "2021"
+description = "library and executable to unfold a file into a folder and fold a previously unfolded folder into a file"
+documentation = "https://docs.rs/unfolder"
+homepage = "https://crates.io/crates/unfolder"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/gabrielfalcao/unfolder"
+keywords = ["io", "path", "tool", "filesystem", "system"]
+authors = ["Gabriel DeMoura <gabrielteratos@gmail.com>"]
+categories = ["filesystem"]
+
+[lib]
+name = "unfolder"
+path = "src/lib.rs"
+
+
+[[bin]]
+name = "unfolder"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5.41", features = ["derive", "env", "string", "unicode", "wrap_help"] }
+hex = "0.4.3"
+iocore = "3.1.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_yaml = "0.9.34"
+sha2 = "0.10.9"
+
+[dev-dependencies]
+iocore-test = "3.1.0"
