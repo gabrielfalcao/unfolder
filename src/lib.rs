@@ -1,15 +1,14 @@
 pub(crate) mod errors;
+#[doc(hidden)]
+pub use errors::Exit;
 #[doc(inline)]
-pub use errors::{Error, Exit, Result};
+pub use errors::{Error, Result};
 #[doc(hidden)]
 pub mod cli;
 #[doc(hidden)]
 pub use cli::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 
-pub mod file;
+pub(crate) mod file;
 
 #[doc(inline)]
-pub use file::{
-    checksum, fold_file, read_bytes_and_checksum, read_unfold_index,
-    unfold_file, validate_checksum, Action, Progress, MAX_FILE_SIZE,
-};
+pub use file::{fold_file, unfold_file, Progress, Action};

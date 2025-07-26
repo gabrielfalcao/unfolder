@@ -7,12 +7,12 @@ use sha2::{Sha256, Digest};
 
 use crate::{Error, Result};
 
-pub const MAX_FILE_SIZE: u64 = u32::MAX as u64;
+const MAX_FILE_SIZE: u64 = u32::MAX as u64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Action {
-    Read,
-    Write,
+    Fold,
+    Unfold,
 }
 impl Display for Action {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
@@ -20,8 +20,8 @@ impl Display for Action {
             f,
             "{}",
             match self {
-                Self::Read => "Read",
-                Self::Write => "Write",
+                Self::Fold => "Fold",
+                Self::Unfold => "Unfold",
             }
         )
     }
@@ -54,20 +54,20 @@ impl Display for Progress {
     }
 }
 
-pub fn checksum(bytes: &[u8]) -> Vec<u8> {
+pub(crate) fn checksum(bytes: &[u8]) -> Vec<u8> {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
     hasher.finalize().to_vec()
 }
 
-pub fn read_bytes_and_checksum(
+pub(crate) fn read_bytes_and_checksum(
     input_path: &Path,
 ) -> Result<(Vec<u8>, Vec<u8>)> {
     let bytes = input_path.read_bytes()?;
     let slice = bytes.as_slice();
     Ok((bytes.clone(), checksum(slice)))
 }
-pub fn validate_checksum(bytes: &[u8], expected: &[u8]) -> Result<()> {
+pub(crate) fn validate_checksum(bytes: &[u8], expected: &[u8]) -> Result<()> {
     let actual = checksum(bytes);
     if actual.as_slice() != expected {
         let expected = hex::encode(expected);
@@ -103,7 +103,7 @@ pub fn unfold_file<C: FnMut(Progress)>(
             "{input_path} is too large {size} (max = {max_file_size})"
         )));
     }
-    progress(Progress::Start(Action::Write));
+    progress(Progress::Start(Action::Unfold));
     let (bytes, sha256) = read_bytes_and_checksum(&input_path)?;
     let mut index = BTreeMap::<String, String>::new();
     index.insert("sha256".to_string(), hex::encode(&sha256));
@@ -124,7 +124,7 @@ pub fn unfold_file<C: FnMut(Progress)>(
         progress(Progress::Chunk {
             index: chunk_index,
             count: chunk_count,
-            action: Action::Write,
+            action: Action::Unfold,
         });
         chunk_path
             .write(&chunk)
@@ -144,7 +144,7 @@ pub fn unfold_file<C: FnMut(Progress)>(
             })?
             .as_bytes(),
     )?;
-    progress(Progress::End(Action::Write));
+    progress(Progress::End(Action::Unfold));
     Ok(output_path.clone())
 }
 
@@ -164,7 +164,7 @@ pub fn fold_file<C: FnMut(Progress)>(
             "{output_path} already exists"
         )));
     }
-    progress(Progress::Start(Action::Read));
+    progress(Progress::Start(Action::Fold));
     let (sha256, input_paths) = read_unfold_index(&input_path)?;
     let mut bytes = Vec::<u8>::new();
     let chunk_count = input_paths.len();
@@ -184,7 +184,7 @@ pub fn fold_file<C: FnMut(Progress)>(
         progress(Progress::Chunk {
             index: chunk_index,
             count: chunk_count,
-            action: Action::Read,
+            action: Action::Fold,
         });
         bytes.extend(&chunk_bytes);
     }
@@ -194,11 +194,11 @@ pub fn fold_file<C: FnMut(Progress)>(
         ))
     })?;
     output_path.mkdir_parents()?.write(&bytes)?;
-    progress(Progress::End(Action::Read));
+    progress(Progress::End(Action::Fold));
     Ok(output_path.clone())
 }
 
-pub fn read_unfold_index(input_path: &Path) -> Result<(Vec<u8>, Vec<Path>)> {
+pub(crate) fn read_unfold_index(input_path: &Path) -> Result<(Vec<u8>, Vec<Path>)> {
     let index_path = input_path
         .join("index")
         .canonicalize()?
